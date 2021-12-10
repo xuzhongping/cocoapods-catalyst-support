@@ -1,4 +1,4 @@
-require 'cocoapods-catalyst-support'
+require File.expand_path('../remove_ios_only_frameworks', __FILE__)
 
 # Uncomment the next line to define a global platform for your project
 # platform :ios, '9.0'
@@ -11,15 +11,19 @@ target 'Sample' do
 end
 
 #Configure your macCatalyst dependencies
-catalyst_configuration do
-	# Uncomment the next line for a verbose output
-	# verbose!
+# catalyst_configuration do
+# 	# Uncomment the next line for a verbose output
+# 	# verbose!
+#
+# 	ios 'Firebase/Analytics' # This dependency will only be available only for iOS
+# 	macos 'AppCenter/Analytics' # This dependency will only be available only for macOS
+# end
 
-	ios 'Firebase/Analytics' # This dependency will only be available only for iOS
-	macos 'AppCenter/Analytics' # This dependency will only be available only for macOS
+def catalyst_unsupported_pods
+  ['Firebase/Analytics']
 end
 
 #Configure your macCatalyst App
 post_install do |installer|
-	installer.configure_catalyst
+	installer.configure_support_catalyst
 end
