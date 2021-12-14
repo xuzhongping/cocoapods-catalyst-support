@@ -343,26 +343,29 @@ class Installer
     pod_names_to_keep = recursive_dependencies(pod_names_to_keep)
     pod_targets_to_keep = pod_targets.filter do |pod| pod_names_to_keep.include? pod.module_name end       # PodTarget
 
-    # 所有不支持catalyst的pod name
+    # 所有不支持catalyst的pod name（有重复值）
     pod_names_to_remove = recursive_dependencies(pod_names_to_remove).filter do |name| !pod_names_to_keep.include? name end
     # 所有不支持catalyst的pod
     pod_targets_to_remove = pod_targets.filter do |pod| pod_names_to_remove.include? pod.module_name end   # PodTarget
 
     loggs "\n#### Unsupported Libraries ####\n#{pod_names_to_remove}\n"
-
-    targets_to_remove = pods_project.targets.filter do |target| pod_names_to_remove.include?(target.module_name) end.filter do |target| target.platform_name == OSPlatform.ios.name end # AbstractTarget
+    targets_to_remove = pods_project.targets.filter do |target| pod_names_to_remove.include?(target.module_name) end
+    # 所有不支持catalyst的target，且构建SDK设置是iOS
+    targets_to_remove = targets_to_remove.filter do |target| target.platform_name == OSPlatform.ios.name end # AbstractTarget
+    # Pods-XXX target
     pods_targets = pods_project.targets.filter do |target| target.name.start_with? "Pods-" end.filter do |target| target.platform_name == OSPlatform.ios.name end   # AbstractTarget
     targets_to_keep = pods_project.targets.filter do |target| !targets_to_remove.include?(target) && !pods_targets.include?(target) end.filter do |target| target.platform_name == OSPlatform.ios.name end   # AbstractTarget
 
-    ######  Determine which dependencies should be removed ###### 
-    dependencies_to_keep = targets_to_keep.reduce([]) do |dependencies, target| dependencies + target.other_linker_flags_dependencies end    
-    dependencies_to_keep = dependencies_to_keep + targets_to_keep.flat_map do |target| target.to_dependency end + pod_targets_to_keep.flat_map do |pod| pod.vendor_products + pod.frameworks end
+    ###### 确定应该删除哪些依赖项 ######
+    dependencies_to_keep = targets_to_keep.reduce([]) do |dependencies, target| dependencies + target.other_linker_flags_dependencies end
+    dependencies_to_keep = dependencies_to_keep + targets_to_keep.flat_map do |target| target.to_dependency end
+    dependencies_to_keep = dependencies_to_keep + pod_targets_to_keep.flat_map do |pod| pod.vendor_products + pod.frameworks end
     
     dependencies_to_remove = targets_to_remove.reduce([]) do |dependencies, target| dependencies + target.other_linker_flags_dependencies end
     dependencies_to_remove = dependencies_to_remove + targets_to_remove.flat_map do |target| target.to_dependency end + pod_targets_to_remove.flat_map do |pod| pod.vendor_products + pod.frameworks end
     dependencies_to_remove = dependencies_to_remove.filter do |d|  !dependencies_to_keep.include? d end
 
-    ###### CATALYST NOT SUPPORTED LINKS ###### 
+    ###### CATALYST 不支持的links ######
     unsupported_links = dependencies_to_remove.map do |d| d.link end.to_set.to_a
     
     loggs "#### Unsupported dependencies ####\n"
