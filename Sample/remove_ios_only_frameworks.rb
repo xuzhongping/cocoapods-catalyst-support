@@ -23,7 +23,7 @@ require 'cocoapods'
 include Xcodeproj::Project::Object
 include Pod
 
-$verbose = false
+$verbose = true
 
 def loggs string
   if $verbose
@@ -383,6 +383,7 @@ class Installer
 
     ###### OTHER LINKER FLAGS -> to iphone* ###### 
     loggs "#### Flagging unsupported libraries ####"
+    # Pods内所有Target的xconfig中ld参数处理
     pods_project.targets.filter do |target| target.platform_name == OSPlatform.ios.name end.each do |target| target.flag_libraries unsupported_links, OSPlatform.ios end
 
     ###### BUILD_PHASES AND DEPENDENCIES -> PLATFORM_FILTER 'ios' ###### 
